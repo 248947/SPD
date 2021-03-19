@@ -3,6 +3,7 @@
 #include "RandomNumberGenerator.h"
 #include <algorithm>
 
+
 std::ostream& operator << (std::ostream& StrmWy, std::vector<int> wek)
 {
     int LiczbaZadan = wek.size();
@@ -62,13 +63,13 @@ std::ostream& operator << (std::ostream& StrmWy, std::vector<std::pair<int, int>
     return StrmWy;
 }
 
-void addCQ(std::vector<int> q, std::vector<int> c, std::vector<int> *wynik)
+void addCQ(std::vector<std::vector<int>> RPQ, std::vector<int> c, std::vector<int> *wynik)
 {
-    int size = q.size();
+    int size = RPQ[2].size();
 
     for (int i = 0; i < size; i++)
     {
-        wynik->push_back(q[i] + c[i + 1]);
+        wynik->push_back(RPQ[2][i] + c[i + 1]);
     }
 }
 
@@ -95,54 +96,165 @@ void FillPi(std::vector<int>& pi, int LiczbaZadan, int tryb)
     }
 }
 
-int main()
+void genereteRpqVector(int LiczbaZadan, std::vector<std::vector<int>> &RPQ, std::vector<int> pi)
 {
     RandomNumberGenerator Obiekt(1);
+    std::vector<int> r;
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < LiczbaZadan; j++)
+        {
+            r.push_back(Obiekt.nextInt(1, 29));
+        }  
+        RPQ.push_back(r);
+        r.clear();
+    }
+
+    RPQ.push_back(pi);
+    
+}
+
+
+std::vector<std::vector<int>> Schrage(std::vector<std::vector<int>> RPQ,int LiczbaZadan, std::vector<int> pi) {
+    int k = 0;
+    int indeks = 0;
+    std::vector<int> PI;
+    std::vector<int> r;
+    PI.resize(LiczbaZadan);
+    auto kopia = RPQ;
+    std::vector<std::vector<int>> wynik;
+
+    std::vector<std::vector<int>> G; //zbiór zadań gotowych do realizacji
+    
+    for (int i = 0; i < 3; i++)
+    {
+        G.push_back(r);
+        wynik.push_back(r);
+    }
+
+    G.push_back(pi);
+    wynik.push_back(r);
+  
+
+    int t = *min_element(RPQ[0].begin(), RPQ[0].end());
+
+    while (!G[0].empty() || !RPQ[0].empty())
+    {
+        while (!RPQ[0].empty() && *min_element(RPQ[0].begin(), RPQ[0].end()) <= t)
+        {
+            int temp = *min_element(RPQ[0].begin(), RPQ[0].end());
+
+            for (int i =0; i<LiczbaZadan; i++)
+            {
+                if (RPQ[0][i] == temp)
+                { 
+                        G[0].push_back(RPQ[0][i]);
+                        G[1].push_back(RPQ[1][i]);
+                        G[2].push_back(RPQ[2][i]);
+                       
+                        RPQ[0].erase(RPQ[0].begin() + i);
+                        RPQ[1].erase(RPQ[1].begin() + i);
+                        RPQ[2].erase(RPQ[2].begin() + i);
+                        RPQ[3].erase(RPQ[3].begin() + i);
+                    
+                    
+                    break;
+                }
+            }
+        }
+        
+        if (!G.empty())
+        {
+            int j = *std::max_element(G[2].begin(), G[2].end());
+
+            for (int i = 0; i < G[2].size(); i++)
+            {
+                if (j == G[2][i])
+                {
+                    indeks = i;
+                }
+            }
+
+            PI[k++] = G[3][indeks]; // nasz numer zadania z vectora pi
+            t += G[1][indeks];// nasze p
+            G[0].erase(G[0].begin() + indeks);
+            G[1].erase(G[1].begin() + indeks);
+            G[2].erase(G[2].begin() + indeks);
+            G[3].erase(G[3].begin() + indeks);
+        }
+        else
+        {
+            t = *min_element(RPQ[0].begin(), RPQ[0].end());
+        }
+       
+    }
+
+    
+        for (int j = 0; j < LiczbaZadan; j++)
+        {
+            int indeks = PI[j];
+            wynik[0].push_back(kopia[0][indeks-1]);
+            wynik[1].push_back(kopia[1][indeks-1]);
+            wynik[2].push_back(kopia[2][indeks-1]);
+            wynik[3].push_back(kopia[3][indeks-1]);
+        }
+    
+    return wynik;
+}
+
+
+int main()
+{
     int LiczbaZadan, tryb;
-    std::vector<std::pair<int, int>> Lista;
-    std::vector<int> C1, S1, pi, q, CQ;
+    std::vector <std::vector<int>> RPQ,POSORTOWANE;
+    std::vector<int> C1, S1, pi,CQ;
 
     C1.push_back(0);
-    
+   
 
     std::cout << "Wprowadz liczbe zadan: ";
     std::cin >> LiczbaZadan;
     std::cout << "Podaj tryb generowania wektora PI(1,2): ";
     std::cin >> tryb;
 
-
+    //wygenerowanie vecotra permutacji PI
     FillPi(pi, LiczbaZadan, tryb);
+    //wygenerowanie tablicy vectorów RPQ
+    genereteRpqVector(LiczbaZadan, RPQ, pi);
     std::cout << "PI:" << pi;
 
-    for (int i = 0; i < LiczbaZadan; i++)
-    {
-        q.push_back(Obiekt.nextInt(1,29));
-    }  // generowanie wektora q
-
-    for (int i = 0; i < LiczbaZadan; i++)
-    {
-        int r = Obiekt.nextInt(1, 29);
-        int p = Obiekt.nextInt(1, 29);
-
-        Lista.push_back(std::make_pair(r, p));
-    } // generowanie elementów r i p
-
-
+    //wyliczenie elementów vectorów S1, C1
     for (int i = 0; i < LiczbaZadan; i++)
     {
         int a = pi[i]-1;
         
-            S1.push_back(std::_Max_value(Lista[a].first, C1[i]));
-            C1.push_back(S1[i] + Lista[a].second);
-    } // obliczenie S1, C1
+            S1.push_back(std::_Max_value(RPQ[0][a], C1[i]));
+            C1.push_back(S1[i] + RPQ[1][a]);
+    } 
 
-    addCQ(q, C1, &CQ);
+    //wyliczenie elementów vectora CQ
+    addCQ(RPQ, C1, &CQ);
 
-    std::cout << Lista;
-    std::cout << "q:" << q;
+
+    POSORTOWANE = Schrage(RPQ, LiczbaZadan, pi);
+   
+    
+    std::cout << "r: " << RPQ[0];
+    std::cout << "p: " << RPQ[1];
+    std::cout << "q: " << RPQ[2];
+    std::cout << "pi: " << RPQ[3];
     std::cout << "S1:" << S1;
     std::cout << "C1:" << C1;
-
     std::cout << "CQ: " << CQ;
     std::cout << *std::max_element(CQ.begin(), CQ.end()) << '\n';
+    std::cout << "r: " << POSORTOWANE[0];
+    std::cout << "p: " << POSORTOWANE[1];
+    std::cout << "q: " << POSORTOWANE[2];
+    std::cout << "pi: " << POSORTOWANE[3];
+
+   
+
+    
+
 }
